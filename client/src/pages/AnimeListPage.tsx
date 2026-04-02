@@ -142,25 +142,25 @@ export default function AnimeListPage() {
                 </div>
                 <div className="flex gap-1 mt-2">
                   <Button 
-                    variant={anime.status === 'WATCHING' ? 'default' : 'ghost'} 
+                    variant="outline"
                     size="sm" 
-                    className={`h-6 text-xs px-2 ${anime.status === 'WATCHING' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                    className={`h-6 text-xs px-2 ${anime.status === 'WATCHING' ? '!bg-blue-600 !text-white hover:!bg-blue-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'WATCHING')}
                   >
                     Viendo
                   </Button>
                   <Button 
-                    variant={anime.status === 'COMPLETED' ? 'default' : 'ghost'} 
+                    variant="outline"
                     size="sm" 
-                    className={`h-6 text-xs px-2 ${anime.status === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                    className={`h-6 text-xs px-2 ${anime.status === 'COMPLETED' ? '!bg-green-600 !text-white hover:!bg-green-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'COMPLETED')}
                   >
                     ✓
                   </Button>
                   <Button 
-                    variant={anime.status === 'DROPPED' ? 'default' : 'ghost'} 
+                    variant="outline"
                     size="sm" 
-                    className={`h-6 text-xs px-2 ${anime.status === 'DROPPED' ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                    className={`h-6 text-xs px-2 ${anime.status === 'DROPPED' ? '!bg-red-600 !text-white hover:!bg-red-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'DROPPED')}
                   >
                     ✗
