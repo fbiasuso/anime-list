@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { animeService, Season, AnimeWithProgress } from '@/services/anime';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 
 const currentYear = new Date().getFullYear();
 const seasons: Season[] = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
@@ -21,15 +23,22 @@ const dayLabels: Record<string, string> = {
 export default function CalendarPage() {
   const [selectedSeason, setSelectedSeason] = useState<Season>('SPRING');
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['animes-calendar', selectedSeason, selectedYear],
     queryFn: () => animeService.getSeasonAnimes(selectedSeason, selectedYear),
   });
 
+  // Filter by status
+  const filteredAnimes = data?.animes?.filter((anime) => {
+    if (filterStatus === 'all') return true;
+    return anime.status === filterStatus;
+  }) || [];
+
   // Group animes by airing day
   const animesByDay = days.reduce((acc, day) => {
-    acc[day] = data?.animes?.filter((a) => a.airingDay === day) || [];
+    acc[day] = filteredAnimes.filter((a) => a.airingDay === day);
     return acc;
   }, {} as Record<string, AnimeWithProgress[]>);
 
@@ -62,6 +71,23 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      <div className="flex gap-2 mb-4">
+        <Button 
+          variant={filterStatus === 'all' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setFilterStatus('all')}
+        >
+          Todos
+        </Button>
+        <Button 
+          variant={filterStatus === 'WATCHING' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setFilterStatus('WATCHING')}
+        >
+          <Eye className="w-4 h-4 mr-1" /> Viendo
+        </Button>
+      </div>
+
       {isLoading && (
         <div className="text-center py-8 text-muted-foreground">Cargando calendario...</div>
       )}
@@ -87,9 +113,6 @@ export default function CalendarPage() {
                     />
                   )}
                   <p className="line-clamp-2 font-medium">{anime.title}</p>
-                  {anime.episodes && (
-                    <p className="text-muted-foreground">{anime.episodes} eps</p>
-                  )}
                 </Card>
               ))}
               {(!animesByDay[day] || animesByDay[day].length === 0) && (

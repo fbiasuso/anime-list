@@ -144,7 +144,7 @@ export default function AnimeListPage() {
                   <Button 
                     variant={anime.status === 'WATCHING' ? 'default' : 'ghost'} 
                     size="sm" 
-                    className="h-6 text-xs px-2"
+                    className={`h-6 text-xs px-2 ${anime.status === 'WATCHING' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'WATCHING')}
                   >
                     Viendo
@@ -152,7 +152,7 @@ export default function AnimeListPage() {
                   <Button 
                     variant={anime.status === 'COMPLETED' ? 'default' : 'ghost'} 
                     size="sm" 
-                    className="h-6 text-xs px-2"
+                    className={`h-6 text-xs px-2 ${anime.status === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'COMPLETED')}
                   >
                     ✓
@@ -160,7 +160,7 @@ export default function AnimeListPage() {
                   <Button 
                     variant={anime.status === 'DROPPED' ? 'default' : 'ghost'} 
                     size="sm" 
-                    className="h-6 text-xs px-2"
+                    className={`h-6 text-xs px-2 ${anime.status === 'DROPPED' ? 'bg-red-600 hover:bg-red-700' : ''}`}
                     onClick={() => handleStatusChange(anime, 'DROPPED')}
                   >
                     ✗
