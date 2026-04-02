@@ -10,7 +10,7 @@ const animeRepository = new PrismaAnimeRepository();
 
 const seasonSchema = z.object({
   season: z.enum(['WINTER', 'SPRING', 'SUMMER', 'FALL']),
-  year: z.number().min(2000).max(2030),
+  year: z.coerce.number().min(2000).max(2030),
 });
 
 const progressSchema = z.object({
