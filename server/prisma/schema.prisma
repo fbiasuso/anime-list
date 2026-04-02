@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  progress  UserAnimeProgress[]
+}
+
+model Anime {
+  id           Int      @id @default(autoincrement())
+  anilistId    Int      @unique
+  title        String
+  titleEnglish String?
+  description  String?
+  coverImage   String?
+  format       String   // SERIES, MOVIE, OVA, ONA
+  season       String   // WINTER, SPRING, SUMMER, FALL
+  seasonYear   Int
+  episodes     Int?
+  airingDay    String?  // MONDAY, TUESDAY, etc.
+  progress     UserAnimeProgress[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model UserAnimeProgress {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  animeId   Int
+  status    String    // WATCHING, COMPLETED, DROPPED, PLAN_TO_WATCH
+  rating    Int?      // 1-10
+  episode   Int       @default(0)
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anime     Anime     @relation(fields: [animeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, animeId])
+}
