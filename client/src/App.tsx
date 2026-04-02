@@ -19,13 +19,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<AnimeListPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<AnimeListPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
+        </Routes>
         <Toaster />
       </BrowserRouter>
     </QueryClientProvider>

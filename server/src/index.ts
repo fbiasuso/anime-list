@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
+import authRoutes from './routes/auth.routes';
+import animeRoutes from './routes/anime.routes';
+
 dotenv.config();
 
 const app = express();
@@ -14,23 +17,19 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes placeholder
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Auth routes placeholder
-app.post('/api/auth/register', (req, res) => {
-  res.status(501).json({ message: 'Not implemented yet' });
-});
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/anime', animeRoutes);
 
-app.post('/api/auth/login', (req, res) => {
-  res.status(501).json({ message: 'Not implemented yet' });
-});
-
-// Anime routes placeholder
-app.get('/api/anime/season', (req, res) => {
-  res.status(501).json({ message: 'Not implemented yet' });
+// Error handler
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
