@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
+import { animeService } from '@/services/anime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +14,23 @@ export default function ProfilePage() {
   const [username, setUsername] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const { toast } = useToast();
+
+  const { data: userAnimes } = useQuery({
+    queryKey: ['userAnimes'],
+    queryFn: () => animeService.getUserAnimes(),
+    enabled: isAuthenticated,
+  });
+
+  // Calculate counts
+  const counts = useMemo(() => {
+    const animes = userAnimes?.animes || [];
+    return {
+      watching: animes.filter((a) => a.status === 'WATCHING').length,
+      completed: animes.filter((a) => a.status === 'COMPLETED').length,
+      dropped: animes.filter((a) => a.status === 'DROPPED').length,
+      planToWatch: animes.filter((a) => a.status === 'PLAN_TO_WATCH').length,
+    };
+  }, [userAnimes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,29 +73,37 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Viendo</CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-600">Viendo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{counts.watching}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Completados</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-600">Completados</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{counts.completed}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Abandonados</CardTitle>
+              <CardTitle className="text-sm font-medium text-red-600">Abandonados</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{counts.dropped}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Planeados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{counts.planToWatch}</div>
             </CardContent>
           </Card>
         </div>

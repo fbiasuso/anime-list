@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { animeService, Season, AnimeWithProgress } from '@/services/anime';
 import { Button } from '@/components/ui/button';
@@ -39,10 +39,14 @@ export default function AnimeListPage() {
     }
   };
 
-  const filteredAnimes = data?.animes?.filter((anime) => {
-    if (filterStatus === 'all') return true;
-    return anime.status === filterStatus;
-  }) || [];
+  const filteredAnimes = useMemo(() => {
+    const filtered = (data?.animes || []).filter((anime) => {
+      if (filterStatus === 'all') return true;
+      return anime.status === filterStatus;
+    });
+    // Sort alphabetically by title
+    return filtered.sort((a, b) => a.title.localeCompare(b.title));
+  }, [data, filterStatus]);
 
   return (
     <div className="pb-20 space-y-4">
