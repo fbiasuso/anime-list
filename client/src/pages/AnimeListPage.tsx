@@ -26,14 +26,66 @@ export default function AnimeListPage() {
   const updateMutation = useMutation({
     mutationFn: ({ animeId, status }: { animeId: number; status: string }) =>
       animeService.updateProgress(animeId, { status: status as any, episode: 0 }),
-    onSuccess: () => {
+    onMutate: async ({ animeId, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['animes', selectedSeason, selectedYear] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(['animes', selectedSeason, selectedYear]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['animes', selectedSeason, selectedYear], (old: any) => {
+        if (!old?.animes) return old;
+        return {
+          ...old,
+          animes: old.animes.map((anime: AnimeWithProgress) => 
+            anime.id === animeId 
+              ? { ...anime, status: status as any }
+              : anime
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _newTodo, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['animes', selectedSeason, selectedYear], context?.previousData);
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ['animes', selectedSeason, selectedYear] });
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: (animeId: number) => animeService.removeProgress(animeId),
-    onSuccess: () => {
+    onMutate: async (animeId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['animes', selectedSeason, selectedYear] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(['animes', selectedSeason, selectedYear]);
+
+      // Optimistically remove the status
+      queryClient.setQueryData(['animes', selectedSeason, selectedYear], (old: any) => {
+        if (!old?.animes) return old;
+        return {
+          ...old,
+          animes: old.animes.map((anime: AnimeWithProgress) => 
+            anime.id === animeId 
+              ? { ...anime, status: undefined }
+              : anime
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _animeId, context) => {
+      queryClient.setQueryData(['animes', selectedSeason, selectedYear], context?.previousData);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['animes', selectedSeason, selectedYear] });
     },
   });
