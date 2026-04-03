@@ -4,7 +4,8 @@ import { animeService, Season, AnimeWithProgress } from '@/services/anime';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Play, Check, X, Filter, ArrowDownAZ, CalendarDays } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar, Play, Check, X, Filter, ArrowDownAZ, CalendarDays, Tv, CalendarClock, Star } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const currentYear = new Date().getFullYear();
@@ -15,6 +16,7 @@ export default function AnimeListPage() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'alphabetical' | 'release'>('alphabetical');
+  const [selectedAnime, setSelectedAnime] = useState<AnimeWithProgress | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -225,7 +227,7 @@ export default function AnimeListPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filteredAnimes.map((anime) => (
-          <Card key={anime.id} className="overflow-hidden">
+          <Card key={anime.id} className="overflow-hidden cursor-pointer" onClick={() => setSelectedAnime(anime)}>
             <div className="flex">
               {anime.coverImage && (
                 <img 
@@ -235,7 +237,7 @@ export default function AnimeListPage() {
                 />
               )}
               <CardContent className="flex-1 p-3">
-                <h3 className="font-semibold text-sm line-clamp-2">{anime.title}</h3>
+                <h3 className="font-semibold text-sm line-clamp-2 cursor-pointer">{anime.title}</h3>
                 {anime.titleEnglish && (
                   <p className="text-xs text-muted-foreground line-clamp-1">{anime.titleEnglish}</p>
                 )}
@@ -244,7 +246,7 @@ export default function AnimeListPage() {
                   <span>•</span>
                   <span>{anime.format}</span>
                 </div>
-                <div className="flex gap-1 mt-2">
+                <div className="flex gap-1 mt-2" onClick={(e) => e.stopPropagation()}>
                   <Button 
                     variant="outline"
                     size="sm" 
@@ -289,6 +291,97 @@ export default function AnimeListPage() {
           No hay animes para mostrar
         </div>
       )}
+
+      {/* Anime Detail Modal */}
+      <Dialog open={!!selectedAnime} onOpenChange={() => setSelectedAnime(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedAnime && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">{selectedAnime.title}</DialogTitle>
+                {selectedAnime.titleEnglish && (
+                  <p className="text-muted-foreground">{selectedAnime.titleEnglish}</p>
+                )}
+              </DialogHeader>
+              
+              <div className="grid md:grid-cols-3 gap-4 mt-4">
+                {selectedAnime.coverImage && (
+                  <img 
+                    src={selectedAnime.coverImage} 
+                    alt={selectedAnime.title}
+                    className="w-full h-64 object-cover rounded-md md:col-span-1"
+                  />
+                )}
+                <div className="md:col-span-2 space-y-4">
+                  {/* Info Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <Tv className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm"><span className="font-medium">Formato:</span> {selectedAnime.format}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarClock className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm"><span className="font-medium">Temporada:</span> {selectedAnime.season} {selectedAnime.seasonYear}</span>
+                    </div>
+                    {selectedAnime.episodes && (
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm"><span className="font-medium">Episodios:</span> {selectedAnime.episodes}</span>
+                      </div>
+                    )}
+                    {selectedAnime.airingDay && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm"><span className="font-medium">Día:</span> {selectedAnime.airingDay}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {selectedAnime.description && (
+                    <div>
+                      <h4 className="font-medium mb-2">Descripción</h4>
+                      <div 
+                        className="text-sm text-muted-foreground prose prose-sm max-h-40 overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: selectedAnime.description }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Your Progress */}
+                  {selectedAnime.status && (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <h4 className="font-medium mb-2">Tu progreso</h4>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className={`px-2 py-1 rounded text-sm ${
+                          selectedAnime.status === 'WATCHING' ? 'bg-blue-600 text-white' :
+                          selectedAnime.status === 'COMPLETED' ? 'bg-green-600 text-white' :
+                          selectedAnime.status === 'DROPPED' ? 'bg-red-600 text-white' :
+                          'bg-gray-600 text-white'
+                        }`}>
+                          {selectedAnime.status === 'WATCHING' ? 'Viendo' :
+                           selectedAnime.status === 'COMPLETED' ? 'Completado' :
+                           selectedAnime.status === 'DROPPED' ? 'Abandonado' : 'Planeado'}
+                        </span>
+                        {selectedAnime.userEpisode !== undefined && selectedAnime.userEpisode > 0 && (
+                          <span className="text-sm text-muted-foreground self-center">
+                            Episode {selectedAnime.userEpisode}
+                          </span>
+                        )}
+                        {selectedAnime.rating && (
+                          <span className="text-sm text-muted-foreground self-center">
+                            ★ {selectedAnime.rating}/10
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
