@@ -9,7 +9,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Public: Get animes from season (fetches from AniList)
+// Public: Get animes from season (with optional auth for user progress)
 router.get('/season', getSeasonAnimes);
 
 // Protected routes

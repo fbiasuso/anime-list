@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { PrismaAnimeRepository } from '../infrastructure/anime.repository';
 import { aniListService } from '../services/anilist.service';
@@ -23,6 +24,22 @@ const progressSchema = z.object({
 export const getSeasonAnimes = async (req: AuthRequest, res: Response) => {
   try {
     const { season, year } = seasonSchema.parse(req.query);
+    
+    // Try to extract userId from token if present (optional auth)
+    let userId: number | undefined;
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        try {
+          const secret = process.env.JWT_SECRET || 'default-secret';
+          const decoded = jwt.verify(token, secret) as { userId: number };
+          userId = decoded.userId;
+        } catch (e) {
+          // Token invalid, ignore
+        }
+      }
+    }
 
     // Fetch from AniList
     const animes = await aniListService.getSeasonAnimes(season, year);
@@ -65,7 +82,38 @@ export const getSeasonAnimes = async (req: AuthRequest, res: Response) => {
       return { ...anime, airingDay };
     });
 
-    res.json({ animes: animesWithDay });
+    // Get user progress for these animes (if user is authenticated)
+    let animesWithProgress = animesWithDay.map((anime) => ({
+      ...anime,
+      status: undefined as string | undefined,
+      userEpisode: undefined as number | undefined,
+      rating: undefined as number | undefined,
+    }));
+
+    // If user is authenticated, get their progress
+    if (userId) {
+      const animeIds = animesWithDay.map((a) => a.id);
+      const progress = await prisma.userAnimeProgress.findMany({
+        where: {
+          userId: req.userId,
+          animeId: { in: animeIds },
+        },
+      });
+
+      const progressMap = new Map(progress.map((p) => [p.animeId, p]));
+
+      animesWithProgress = animesWithDay.map((anime) => {
+        const userProgress = progressMap.get(anime.id);
+        return {
+          ...anime,
+          status: userProgress?.status,
+          userEpisode: userProgress?.episode,
+          rating: userProgress?.rating ?? undefined,
+        };
+      });
+    }
+
+    res.json({ animes: animesWithProgress });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid parameters', details: error.errors });
