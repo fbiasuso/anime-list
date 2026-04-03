@@ -4,7 +4,7 @@ import { animeService, Season, AnimeWithProgress } from '@/services/anime';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Play, Check, X, Filter } from 'lucide-react';
+import { Calendar, Play, Check, X, Filter, ArrowDownAZ, CalendarDays } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const currentYear = new Date().getFullYear();
@@ -14,6 +14,7 @@ export default function AnimeListPage() {
   const [selectedSeason, setSelectedSeason] = useState<Season>('SPRING');
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'alphabetical' | 'release'>('alphabetical');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -44,9 +45,22 @@ export default function AnimeListPage() {
       if (filterStatus === 'all') return true;
       return anime.status === filterStatus;
     });
-    // Sort alphabetically by title
-    return filtered.sort((a, b) => a.title.localeCompare(b.title));
-  }, [data, filterStatus]);
+    
+    // Sort based on selected option
+    if (sortBy === 'alphabetical') {
+      return filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else {
+      // Sort by release date (newest first) - using seasonYear and season
+      const seasonOrder = { WINTER: 0, SPRING: 1, SUMMER: 2, FALL: 3 };
+      return filtered.sort((a, b) => {
+        if (a.seasonYear !== b.seasonYear) {
+          return b.seasonYear - a.seasonYear;
+        }
+        return (seasonOrder[b.season as keyof typeof seasonOrder] || 0) - 
+               (seasonOrder[a.season as keyof typeof seasonOrder] || 0);
+      });
+    }
+  }, [data, filterStatus, sortBy]);
 
   return (
     <div className="pb-20 space-y-4">
@@ -74,6 +88,25 @@ export default function AnimeListPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        
+        <div className="flex gap-1">
+          <Button
+            variant={sortBy === 'alphabetical' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('alphabetical')}
+            title="Orden alfabético"
+          >
+            <ArrowDownAZ className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={sortBy === 'release' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('release')}
+            title="Fecha de estreno (más reciente)"
+          >
+            <CalendarDays className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
