@@ -31,9 +31,21 @@ export default function AnimeListPage() {
     },
   });
 
-  const handleStatusChange = (anime: AnimeWithProgress, status: string) => {
+  const handleStatusChange = (anime: AnimeWithProgress, newStatus: string) => {
     try {
-      updateMutation.mutate({ animeId: anime.id, status });
+      // If clicking the same status that's already active, remove it (toggle off)
+      // Exception: DROPPED can only be removed, not toggled to another status
+      if (anime.status === newStatus) {
+        // For dropped, just remove the status
+        if (newStatus === 'DROPPED') {
+          updateMutation.mutate({ animeId: anime.id, status: 'PLAN_TO_WATCH' });
+          toast({ title: 'Estado eliminado', description: `${anime.title} ya no está abandonado` });
+        }
+        // For others, we don't do anything on toggle off (optional: could add this)
+        return;
+      }
+      
+      updateMutation.mutate({ animeId: anime.id, status: newStatus });
       toast({ title: 'Estado actualizado', description: `${anime.title}` });
     } catch (err: any) {
       toast({ title: 'Error', description: (err as Error).message, variant: 'destructive' });
@@ -185,6 +197,14 @@ export default function AnimeListPage() {
                     onClick={() => handleStatusChange(anime, 'WATCHING')}
                   >
                     Viendo
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm" 
+                    className={`h-6 text-xs px-2 ${anime.status === 'PLAN_TO_WATCH' ? '!bg-gray-600 !text-white hover:!bg-gray-700' : ''}`}
+                    onClick={() => handleStatusChange(anime, 'PLAN_TO_WATCH')}
+                  >
+                    <Calendar className="w-3 h-3" />
                   </Button>
                   <Button 
                     variant="outline"
