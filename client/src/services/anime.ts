@@ -54,4 +54,8 @@ export const animeService = {
       { rating }
     );
   },
+
+  removeProgress: async (animeId: number) => {
+    return api.delete<{ success: boolean }>(`/anime/${animeId}/progress`);
+  },
 };

@@ -33,18 +33,14 @@ export default function AnimeListPage() {
 
   const handleStatusChange = (anime: AnimeWithProgress, newStatus: string) => {
     try {
-      // If clicking the same status that's already active, remove it (toggle off)
-      // Exception: DROPPED can only be removed, not toggled to another status
+      // If clicking the same status that's already active, remove it entirely
       if (anime.status === newStatus) {
-        // For dropped, just remove the status
-        if (newStatus === 'DROPPED') {
-          updateMutation.mutate({ animeId: anime.id, status: 'PLAN_TO_WATCH' });
-          toast({ title: 'Estado eliminado', description: `${anime.title} ya no está abandonado` });
-        }
-        // For others, we don't do anything on toggle off (optional: could add this)
+        animeService.removeProgress(anime.id);
+        toast({ title: 'Estado eliminado', description: `${anime.title}` });
         return;
       }
       
+      // Otherwise, set the new status (overwrites previous)
       updateMutation.mutate({ animeId: anime.id, status: newStatus });
       toast({ title: 'Estado actualizado', description: `${anime.title}` });
     } catch (err: any) {

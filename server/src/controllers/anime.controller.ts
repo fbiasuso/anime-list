@@ -95,7 +95,7 @@ export const getSeasonAnimes = async (req: AuthRequest, res: Response) => {
       const animeIds = animesWithDay.map((a) => a.id);
       const progress = await prisma.userAnimeProgress.findMany({
         where: {
-          userId: req.userId,
+          userId: userId,
           animeId: { in: animeIds },
         },
       });
@@ -199,6 +199,28 @@ export const updateProgress = async (req: AuthRequest, res: Response) => {
     }
     console.error('Update progress error:', error);
     res.status(500).json({ error: 'Failed to update progress' });
+  }
+};
+
+// DELETE /api/anime/:id/progress - Remove anime progress
+export const removeProgress = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const animeId = parseInt(req.params.id);
+
+    await prisma.userAnimeProgress.delete({
+      where: {
+        userId_animeId: {
+          userId,
+          animeId,
+        },
+      },
+    });
+
+    res.json({ success: true, message: 'Progress removed' });
+  } catch (error) {
+    console.error('Remove progress error:', error);
+    res.status(500).json({ error: 'Failed to remove progress' });
   }
 };
 
