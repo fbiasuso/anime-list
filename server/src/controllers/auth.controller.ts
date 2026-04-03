@@ -2,9 +2,18 @@ import { Response } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { PrismaUserRepository } from '../infrastructure/user.repository';
-import { generateToken, AuthRequest } from '../middleware/auth';
+import { generateToken, authenticateToken, AuthRequest } from '../middleware/auth';
 
 const userRepository = new PrismaUserRepository();
+
+// Available timezones
+export const TIMEZONES = [
+  { value: 'America/Argentina/Buenos_Aires', label: 'Argentina (ART - UTC-3)', offset: -3 },
+  { value: 'America/New_York', label: 'EE.UU. Este (EST - UTC-5)', offset: -5 },
+  { value: 'America/Los_Angeles', label: 'EE.UU. Pacífico (PST - UTC-8)', offset: -8 },
+  { value: 'Europe/London', label: 'Reino Unido (GMT/BST)', offset: 0 },
+  { value: 'Asia/Tokyo', label: 'Japón (JST - UTC+9)', offset: 9 },
+];
 
 const registerSchema = z.object({
   username: z.string().min(3).max(30),
@@ -40,6 +49,7 @@ export const register = async (req: AuthRequest, res: Response) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        timezone: user.timezone,
       },
       token,
     });
@@ -73,6 +83,7 @@ export const login = async (req: AuthRequest, res: Response) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        timezone: user.timezone,
       },
       token,
     });
@@ -82,5 +93,36 @@ export const login = async (req: AuthRequest, res: Response) => {
     }
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// GET /api/auth/timezones - Get available timezones
+export const getTimezones = async (req: AuthRequest, res: Response) => {
+  res.json({ timezones: TIMEZONES });
+};
+
+// PUT /api/auth/timezone - Update user's timezone
+export const updateTimezone = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { timezone } = req.body;
+
+    if (!timezone || !TIMEZONES.some(tz => tz.value === timezone)) {
+      return res.status(400).json({ error: 'Invalid timezone' });
+    }
+
+    const user = await userRepository.update(userId, { timezone });
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        timezone: user.timezone,
+      },
+    });
+  } catch (error) {
+    console.error('Update timezone error:', error);
+    res.status(500).json({ error: 'Failed to update timezone' });
   }
 };

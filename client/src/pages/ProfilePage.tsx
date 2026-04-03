@@ -1,19 +1,28 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { animeService } from '@/services/anime';
+import { authService, Timezone } from '@/services/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { Globe } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, login, register, logout, isLoading } = useAuthStore();
+  const { user, isAuthenticated, login, register, logout, isLoading, checkAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: timezones } = useQuery({
+    queryKey: ['timezones'],
+    queryFn: () => authService.getTimezones(),
+  });
 
   const { data: userAnimes } = useQuery({
     queryKey: ['userAnimes'],
@@ -21,14 +30,23 @@ export default function ProfilePage() {
     enabled: isAuthenticated,
   });
 
+  const timezoneMutation = useMutation({
+    mutationFn: (timezone: string) => authService.updateTimezone(timezone),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['animes'] });
+      checkAuth();
+      toast({ title: 'Zona horaria actualizada' });
+    },
+  });
+
   // Calculate counts
   const counts = useMemo(() => {
     const animes = userAnimes?.animes || [];
     return {
-      watching: animes.filter((a) => a.status === 'WATCHING').length,
-      completed: animes.filter((a) => a.status === 'COMPLETED').length,
-      dropped: animes.filter((a) => a.status === 'DROPPED').length,
-      planToWatch: animes.filter((a) => a.status === 'PLAN_TO_WATCH').length,
+      watching: animes.filter((a: any) => a.status === 'WATCHING').length,
+      completed: animes.filter((a: any) => a.status === 'COMPLETED').length,
+      dropped: animes.filter((a: any) => a.status === 'DROPPED').length,
+      planToWatch: animes.filter((a: any) => a.status === 'PLAN_TO_WATCH').length,
     };
   }, [userAnimes]);
 
@@ -66,10 +84,32 @@ export default function ProfilePage() {
             <CardTitle>{user.username}</CardTitle>
             <CardDescription>{user.email}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Miembro desde: {new Date().toLocaleDateString()}
             </p>
+            
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5 text-muted-foreground" />
+              <div className="flex-1">
+                <label className="text-sm font-medium block mb-1">Zona horaria</label>
+                <Select 
+                  value={user.timezone || 'America/Argentina/Buenos_Aires'} 
+                  onValueChange={(value) => timezoneMutation.mutate(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones?.timezones?.map((tz: Timezone) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

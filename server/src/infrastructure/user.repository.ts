@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { UserRepository, CreateUserDTO, User as UserEntity } from '../repositories/interfaces';
+import { UserRepository, CreateUserDTO, UpdateUserDTO, User as UserEntity } from '../repositories/interfaces';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +13,7 @@ export class PrismaUserRepository implements UserRepository {
       username: user.username,
       email: user.email,
       password: user.password,
+      timezone: user.timezone,
       createdAt: user.createdAt,
     };
   }
@@ -25,6 +26,7 @@ export class PrismaUserRepository implements UserRepository {
       username: user.username,
       email: user.email,
       password: user.password,
+      timezone: user.timezone,
       createdAt: user.createdAt,
     };
   }
@@ -37,6 +39,7 @@ export class PrismaUserRepository implements UserRepository {
       username: user.username,
       email: user.email,
       password: user.password,
+      timezone: user.timezone,
       createdAt: user.createdAt,
     };
   }
@@ -48,6 +51,7 @@ export class PrismaUserRepository implements UserRepository {
         username: data.username,
         email: data.email,
         password: hashedPassword,
+        timezone: data.timezone || 'America/Argentina/Buenos_Aires',
       },
     });
     return {
@@ -55,6 +59,24 @@ export class PrismaUserRepository implements UserRepository {
       username: user.username,
       email: user.email,
       password: user.password,
+      timezone: user.timezone,
+      createdAt: user.createdAt,
+    };
+  }
+
+  async update(id: number, data: UpdateUserDTO): Promise<UserEntity> {
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        timezone: data.timezone,
+      },
+    });
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      timezone: user.timezone,
       createdAt: user.createdAt,
     };
   }

@@ -61,7 +61,26 @@ export const getSeasonAnimes = async (req: AuthRequest, res: Response) => {
       )
     );
 
-    // Calculate airing day from startDate
+    // Calculate airing day based on user's timezone
+    const getTimezoneOffset = (tz: string): number => {
+      const offsets: Record<string, number> = {
+        'America/Argentina/Buenos_Aires': -3,
+        'America/New_York': -5,
+        'America/Los_Angeles': -8,
+        'Europe/London': 0,
+        'Asia/Tokyo': 9,
+      };
+      return offsets[tz] || -3; // Default to Argentina
+    };
+
+    const userTimezone = userId 
+      ? (await prisma.user.findUnique({ where: { id: userId } }))?.timezone || 'America/Argentina/Buenos_Aires'
+      : 'America/Argentina/Buenos_Aires';
+    
+    const japanOffset = 9; // Japan is UTC+9
+    const userOffset = getTimezoneOffset(userTimezone);
+    const offsetDiff = userOffset - japanOffset;
+
     const dayMap: Record<number, string> = {
       0: 'SUNDAY',
       1: 'MONDAY',
@@ -77,7 +96,12 @@ export const getSeasonAnimes = async (req: AuthRequest, res: Response) => {
       let airingDay = anime.airingDay;
       if (original.startDate?.day && original.startDate?.month && original.startDate?.year) {
         const date = new Date(original.startDate.year, original.startDate.month - 1, original.startDate.day);
-        airingDay = dayMap[date.getDay()] || null;
+        // Adjust day based on timezone difference
+        let adjustedDay = date.getDay() + offsetDiff;
+        // Handle wraparound
+        while (adjustedDay < 0) adjustedDay += 7;
+        while (adjustedDay > 6) adjustedDay -= 7;
+        airingDay = dayMap[adjustedDay] || null;
       }
       return { ...anime, airingDay };
     });

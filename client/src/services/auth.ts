@@ -4,11 +4,18 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  timezone?: string;
 }
 
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+export interface Timezone {
+  value: string;
+  label: string;
+  offset: number;
 }
 
 export const authService = {
@@ -49,5 +56,21 @@ export const authService = {
 
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('token');
+  },
+
+  updateTimezone: async (timezone: string) => {
+    const response = await api.put<{ user: User }>('/auth/timezone', { timezone });
+    if (response.user) {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, timezone: response.user.timezone };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    }
+    return response;
+  },
+
+  getTimezones: async () => {
+    return api.get<{ timezones: Timezone[] }>('/auth/timezones');
   },
 };

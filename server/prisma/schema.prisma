@@ -12,6 +12,7 @@ model User {
   username  String   @unique
   email     String   @unique
   password  String
+  timezone  String   @default("America/Argentina/Buenos_Aires")
   createdAt DateTime @default(now())
   progress  UserAnimeProgress[]
 }
