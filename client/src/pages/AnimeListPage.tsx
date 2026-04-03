@@ -31,11 +31,18 @@ export default function AnimeListPage() {
     },
   });
 
+  const removeMutation = useMutation({
+    mutationFn: (animeId: number) => animeService.removeProgress(animeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['animes', selectedSeason, selectedYear] });
+    },
+  });
+
   const handleStatusChange = (anime: AnimeWithProgress, newStatus: string) => {
     try {
       // If clicking the same status that's already active, remove it entirely
       if (anime.status === newStatus) {
-        animeService.removeProgress(anime.id);
+        removeMutation.mutate(anime.id);
         toast({ title: 'Estado eliminado', description: `${anime.title}` });
         return;
       }
